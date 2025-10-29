@@ -1,4 +1,6 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Options;
 using Models.Slimechat;
 
 namespace Hubs;
@@ -6,12 +8,14 @@ namespace Hubs;
 
 public class ChatHub : Hub
 {
-    // Debug-----
+    // Debug----------------------------------------------
     private readonly ILogger<ChatHub> _logger;
+    private readonly ChatSettings _chatSettings;
 
-    public ChatHub(ILogger<ChatHub> logger)
+    public ChatHub(ILogger<ChatHub> logger, IOptions<ChatSettings> chatSettings)
     {
         _logger = logger;
+        _chatSettings = chatSettings.Value;
     }
 
     public override async Task OnConnectedAsync()
@@ -29,9 +33,14 @@ public class ChatHub : Hub
         }
         await base.OnDisconnectedAsync(exception);
     }
-    //-----------
+    //----------------------------------------------------
+
     public async Task BroadcastMessage(MessageData messageData)
     {
+        messageData.Name = SanitiseName(messageData.Name);
+        messageData.Color = SanitiseColor(messageData.Color);
+        messageData.Content = SanitiseContent(messageData.Content);
+
         _logger.LogInformation($"BroadcastMessage: {messageData.Name} said: {messageData.Content} at {DateTimeOffset.UtcNow}");
         await Clients.All.SendAsync("MessageReceived", new
         {
@@ -43,10 +52,14 @@ public class ChatHub : Hub
         });
     }
 
-
     public async Task SendAsServer(long username, string message)
     {
         _logger.LogInformation($"SendAsServer called: user={username}, message={message}");
         await Clients.All.SendAsync("ServerMessage", username, message);
     }
+
+    // Utils
+    private string SanitiseColor(string? hexcolor) => Regex.IsMatch(hexcolor ?? "", @"^#[0-9A-Fa-f]{6}$") ? hexcolor! : "#000000";
+    private string SanitiseName(string name) => string.IsNullOrWhiteSpace(name) ? "SLime" : name[..Math.Min(50, name.Length)];
+    private string SanitiseContent(string messageContent) => string.IsNullOrWhiteSpace(messageContent) ? " " : messageContent[..Math.Min(1000, messageContent.Length)];
 }
