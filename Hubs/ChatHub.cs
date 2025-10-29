@@ -60,6 +60,10 @@ public class ChatHub : Hub
 
     // Utils
     private string SanitiseColor(string? hexcolor) => Regex.IsMatch(hexcolor ?? "", @"^#[0-9A-Fa-f]{6}$") ? hexcolor! : "#000000";
-    private string SanitiseName(string name) => string.IsNullOrWhiteSpace(name) ? "SLime" : name[..Math.Min(50, name.Length)];
-    private string SanitiseContent(string messageContent) => string.IsNullOrWhiteSpace(messageContent) ? " " : messageContent[..Math.Min(1000, messageContent.Length)];
+
+    private string SanitiseName(string? name) =>
+        string.IsNullOrWhiteSpace(name) ? "Slime" : name[..Math.Min(_chatSettings.NameLengthMax, name.Length)];
+
+    private string SanitiseContent(string? messageContent) =>
+        string.IsNullOrWhiteSpace(messageContent) ? "" : messageContent[..Math.Min(_chatSettings.MessageLengthMax, messageContent.Length)];
 }
