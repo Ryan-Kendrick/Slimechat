@@ -5,10 +5,8 @@ using Models.Slimechat;
 
 namespace Hubs;
 
-
 public class ChatHub : Hub
 {
-    // Debug----------------------------------------------
     private readonly ILogger<ChatHub> _logger;
     private readonly ChatSettings _chatSettings;
 
@@ -20,50 +18,114 @@ public class ChatHub : Hub
 
     public override async Task OnConnectedAsync()
     {
-        _logger.LogInformation($"Client connected: {Context.ConnectionId}");
+        Console.WriteLine($@"
+            Cnnection ID: {Context.ConnectionId}
+            User Identifier: {Context.UserIdentifier}
+            Remote IP: {Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString()}
+        ");
+
+        _logger.LogInformation("Client connected");
         await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        _logger.LogInformation($"Client disconnected: {Context.ConnectionId}");
+
+
         if (exception != null)
         {
             _logger.LogError(exception, "Client disconnected with error");
         }
+        else
+        {
+            _logger.LogInformation("Client disconnected");
+        }
+
         await base.OnDisconnectedAsync(exception);
     }
-    //----------------------------------------------------
 
     public async Task BroadcastMessage(MessageData messageData)
     {
-        messageData.Name = SanitiseName(messageData.Name);
-        messageData.Color = SanitiseColor(messageData.Color);
-        messageData.Content = SanitiseContent(messageData.Content);
-
-        _logger.LogInformation($"BroadcastMessage: {messageData.Name} said: {messageData.Content} at {DateTimeOffset.UtcNow}");
-        await Clients.All.SendAsync("MessageReceived", new
+        var sanitised = new
         {
-            name = messageData.Name,
-            color = messageData.Color,
-            content = messageData.Content,
+            name = SanitiseName(messageData.Name),
+            color = SanitiseColor(messageData.Color),
+            content = SanitiseContent(messageData.Content),
             unixTime = messageData.unixTime,
-            id = $"{messageData.Name}.{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
-        });
+            id = $"{messageData.Name}." +
+                $"{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+        };
+
+        try
+        {
+            _logger.LogInformation(
+                "BroadcastMessage from {Name} at {UtcTime}: {Content}",
+                sanitised.name,
+                DateTimeOffset.UtcNow,
+                sanitised.content
+            );
+
+            await Clients.All.SendAsync(
+                "MessageReceived",
+                sanitised,
+                Context.ConnectionAborted
+            );
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning(
+                "Broadcast canceled (connection aborted or token canceled)"
+            );
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "BroadcastMessage failed");
+            throw new HubException("Failed to broadcast the message.");
+        }
     }
 
     public async Task SendAsServer(long username, string message)
     {
-        _logger.LogInformation($"SendAsServer called: user={username}, message={message}");
-        await Clients.All.SendAsync("ServerMessage", username, message);
+        try
+        {
+            _logger.LogInformation(
+                "SendAsServer invoked for {User}: {Message}",
+                username,
+                message
+            );
+
+            await Clients.All.SendAsync(
+                "ServerMessage",
+                username,
+                message,
+                Context.ConnectionAborted
+            );
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("SendAsServer canceled (connection aborted)");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SendAsServer failed");
+            throw new HubException("Failed to send server message.");
+        }
     }
 
-    // Utils
-    private string SanitiseColor(string? hexcolor) => Regex.IsMatch(hexcolor ?? "", @"^#[0-9A-Fa-f]{6}$") ? hexcolor! : "#000000";
+    private string SanitiseColor(string? hexcolor) =>
+        Regex.IsMatch(hexcolor ?? "", @"^#[0-9A-Fa-f]{6}$")
+            ? hexcolor!
+            : "#000000";
 
     private string SanitiseName(string? name) =>
-        string.IsNullOrWhiteSpace(name) ? "Slime" : name[..Math.Min(_chatSettings.NameLengthMax, name.Length)];
+        string.IsNullOrWhiteSpace(name)
+            ? "Slime"
+            : name[..Math.Min(_chatSettings.NameLengthMax, name.Length)];
 
-    private string SanitiseContent(string? messageContent) =>
-        string.IsNullOrWhiteSpace(messageContent) ? "" : messageContent[..Math.Min(_chatSettings.MessageLengthMax, messageContent.Length)];
+    private string SanitiseContent(string? content) =>
+        string.IsNullOrWhiteSpace(content)
+            ? ""
+            : content[..Math.Min(_chatSettings.MessageLengthMax, content.Length)];
 }
