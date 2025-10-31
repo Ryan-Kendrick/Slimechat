@@ -18,13 +18,12 @@ public class ChatHub : Hub
 
     public override async Task OnConnectedAsync()
     {
-        Console.WriteLine($@"
-            Cnnection ID: {Context.ConnectionId}
-            User Identifier: {Context.UserIdentifier}
-            Remote IP: {Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString()}
+        _logger.LogInformation($@"
+Client connected
+    Connection ID: {Context.ConnectionId}
+    User Identifier: {Context.UserIdentifier}
+    Remote IP: {Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString()}
         ");
-
-        _logger.LogInformation("Client connected");
         await base.OnConnectedAsync();
     }
 
