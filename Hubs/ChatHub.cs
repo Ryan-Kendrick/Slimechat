@@ -24,21 +24,18 @@ Client connected
     User Identifier: {Context.UserIdentifier}
     Remote IP: {Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString()}
         ");
+
+        // Send recent message history
+
         await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        _logger.LogInformation($"Client disconnected: {Context.ConnectionId}");
+        _rateLimits.Remove(Context.ConnectionId);
 
-
-        if (exception != null)
-        {
-            _logger.LogError(exception, "Client disconnected with error");
-        }
-        else
-        {
-            _logger.LogInformation("Client disconnected");
-        }
+        if (exception != null) _logger.LogError(exception, "Client disconnected with error");
 
         await base.OnDisconnectedAsync(exception);
     }
@@ -51,13 +48,13 @@ Client connected
 
         if (rateLimited) throw new HubException("Rate limit exceeded");
 
-        var sanitised = new
+        var sanitised = new Message
         {
-            name = SanitiseName(messageData.Name),
-            color = SanitiseColor(messageData.Color),
-            content = SanitiseContent(messageData.Content),
-            unixTime = messageData.unixTime,
-            id = $"{messageData.Name}." +
+            Name = SanitiseName(messageData.Name),
+            Color = SanitiseColor(messageData.Color),
+            Content = SanitiseContent(messageData.Content),
+            UnixTime = messageData.UnixTime,
+            Id = $"{messageData.Name}." +
                 $"{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
         };
 
@@ -65,9 +62,9 @@ Client connected
         {
             _logger.LogInformation(
                 "BroadcastMessage from {Name} at {UtcTime}: {Content}",
-                sanitised.name,
+                sanitised.Name,
                 DateTimeOffset.UtcNow,
-                sanitised.content
+                sanitised.Content
             );
 
             await Clients.All.SendAsync(
@@ -136,6 +133,7 @@ Client connected
 
     private bool CheckRateLimit(string ConnectionId)
     {
+        // Once unique names are being used this should be userId = user.name ?? ConnectionId
         if (!_rateLimits.ContainsKey(ConnectionId)) _rateLimits[ConnectionId] = new Queue<DateTime>();
 
         var queue = _rateLimits[ConnectionId];

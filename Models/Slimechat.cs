@@ -11,8 +11,13 @@ public class MessageData
     public string Name { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public string? Color { get; set; } = string.Empty;
-    public long unixTime { get; set; } = 0;
+    public long UnixTime { get; set; } = 0;
 
+}
+
+public class Message : MessageData
+{
+    public string Id { get; set; } = string.Empty;
 }
 
 public class ChatSettings
