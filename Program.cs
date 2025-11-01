@@ -42,7 +42,7 @@ builder.Services.AddCors(options =>
         });
 });
 
-builder.Services.AddSqlServer<ChatDb>(connectionString);
+builder.Services.AddSqlite<ChatDb>(connectionString);
 
 var app = builder.Build();
 
