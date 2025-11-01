@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace Models.Slimechat;
 
 public class ChatUser
@@ -26,4 +28,10 @@ public class ChatSettings
     public int NameLengthMax { get; set; } = 0;
     public int MessageHistoryMax { get; set; } = 0;
     public int RateLimitPerMinute { get; set; } = 0;
+}
+
+class ChatDb : DbContext
+{
+    public ChatDb(DbContextOptions options) : base(options) { }
+    public DbSet<Message> Messages { get; set; } = null!;
 }
