@@ -20,4 +20,5 @@ public class ChatSettings
     public int MessageLengthMax { get; set; } = 0;
     public int NameLengthMax { get; set; } = 0;
     public int MessageHistoryMax { get; set; } = 0;
+    public int RateLimitPerMinute { get; set; } = 0;
 }

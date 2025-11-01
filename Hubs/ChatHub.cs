@@ -9,7 +9,7 @@ public class ChatHub : Hub
 {
     private readonly ILogger<ChatHub> _logger;
     private readonly ChatSettings _chatSettings;
-
+    private static readonly Dictionary<string, Queue<DateTime>> _rateLimits = new();
     public ChatHub(ILogger<ChatHub> logger, IOptions<ChatSettings> chatSettings)
     {
         _logger = logger;
@@ -43,8 +43,14 @@ Client connected
         await base.OnDisconnectedAsync(exception);
     }
 
+
+
     public async Task BroadcastMessage(MessageData messageData)
     {
+        bool rateLimited = !CheckRateLimit(Context.ConnectionId);
+
+        if (rateLimited) throw new HubException("Rate limit exceeded");
+
         var sanitised = new
         {
             name = SanitiseName(messageData.Name),
@@ -127,4 +133,23 @@ Client connected
         string.IsNullOrWhiteSpace(content)
             ? ""
             : content[..Math.Min(_chatSettings.MessageLengthMax, content.Length)];
+
+    private bool CheckRateLimit(string ConnectionId)
+    {
+        if (!_rateLimits.ContainsKey(ConnectionId)) _rateLimits[ConnectionId] = new Queue<DateTime>();
+
+        var queue = _rateLimits[ConnectionId];
+        var now = DateTime.UtcNow;
+        Console.WriteLine($"Queue: {_rateLimits} This queue: {queue}, timenow: {now}");
+
+        while (queue.Count > 0 && queue.Peek() < now.AddMinutes(-1)) queue.Dequeue();
+
+        if (queue.Count >= _chatSettings.RateLimitPerMinute) return false;
+
+        queue.Enqueue(now);
+        return true;
+
+    }
+
+
 }
