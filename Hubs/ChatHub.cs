@@ -26,6 +26,7 @@ Client connected
         ");
 
         // Send recent message history
+        // Invoke user connected task
 
         await base.OnConnectedAsync();
     }
