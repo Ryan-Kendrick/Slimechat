@@ -27,7 +27,8 @@ Client connected
     Remote IP: {Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString() ?? "Unknown"}
         ");
 
-        var recentMessages = await db.Messages.ToListAsync();
+        var recentMessages = await db.Messages.OrderByDescending(m => m.UnixTime).Take(_chatSettings.MessageHistoryMax).Reverse().ToListAsync();
+
         await Clients.Caller.SendAsync("GetMessageHistory", recentMessages);
 
         await base.OnConnectedAsync();

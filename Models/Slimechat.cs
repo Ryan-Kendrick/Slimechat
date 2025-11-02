@@ -11,11 +11,11 @@ public class ChatUser
 
 public class MessageData
 {
-    public string Name { get; set; } = string.Empty;
+    public string? Name { get; set; }
     public string Content { get; set; } = string.Empty;
-    public string? Color { get; set; } = string.Empty;
-    public long UnixTime { get; set; } = 0;
-
+    public string? Color { get; set; }
+    public long? UnixTime { get; set; }
+    public string Type { get; set; } = "user"; // system or user
 }
 
 public class Message : MessageData
@@ -50,18 +50,19 @@ public class ChatDb : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id)
                 .IsRequired()
-                .HasMaxLength(_chatSettings.NameLengthMax + 13) // Id length = name length + unix epoch length
+                .HasMaxLength(_chatSettings.NameLengthMax + 13)
                 .ValueGeneratedNever();
             entity.Property(e => e.Content)
                 .IsRequired()
                 .HasMaxLength(_chatSettings.MessageLengthMax);
             entity.Property(e => e.Name)
-                .IsRequired()
                 .HasMaxLength(_chatSettings.NameLengthMax);
             entity.Property(e => e.Color)
                .HasMaxLength(7);
-            entity.Property(e => e.UnixTime)
-                .IsRequired();
+            entity.Property(e => e.UnixTime);
+            entity.Property(e => e.Type)
+                .IsRequired()
+                .HasMaxLength(6);
         });
     }
 }
