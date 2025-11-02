@@ -3,18 +3,23 @@ using Microsoft.Extensions.Options;
 
 namespace Models.Slimechat;
 
+
 public class ChatUser
 {
     public string Name { get; set; } = string.Empty;
-    public string? Color { get; set; } = string.Empty;
+    public string Color { get; set; } = string.Empty;
+}
+public class ActiveConnection : ChatUser
+{
+    public string ConnectionId { get; set; } = string.Empty;
 }
 
 public class MessageData
 {
-    public string? Name { get; set; }
+    public string Name { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
-    public string? Color { get; set; }
-    public long? UnixTime { get; set; }
+    public string Color { get; set; } = "#000";
+    public long UnixTime { get; set; } = 1763414400;
     public string Type { get; set; } = "user"; // system or user
 }
 
@@ -40,6 +45,7 @@ public class ChatDb : DbContext
         _chatSettings = chatSettings.Value;
     }
     public DbSet<Message> Messages { get; set; } = null!;
+    public DbSet<ActiveConnection> ActiveConnections { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -64,5 +70,18 @@ public class ChatDb : DbContext
                 .IsRequired()
                 .HasMaxLength(6);
         });
+
+        modelBuilder.Entity<ActiveConnection>(entity =>
+      {
+          entity.HasKey(e => e.ConnectionId);
+          entity.Property(e => e.ConnectionId)
+              .IsRequired();
+          entity.Property(e => e.Name)
+              .IsRequired()
+              .HasMaxLength(_chatSettings.NameLengthMax);
+          entity.Property(e => e.Color)
+                .IsRequired()
+                .HasMaxLength(7);
+      });
     }
 }
