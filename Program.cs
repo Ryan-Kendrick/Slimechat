@@ -72,4 +72,18 @@ TaskScheduler.UnobservedTaskException += (sender, err) =>
     err.SetObserved();
 };
 
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ChatDb>();
+    try
+    {
+        dbContext.Database.EnsureCreated();
+        app.Logger.LogInformation("Database initialized successfully");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Failed to initialize database");
+    }
+}
+
 app.Run();
