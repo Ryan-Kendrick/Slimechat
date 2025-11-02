@@ -31,7 +31,7 @@ public class ChatSettings
     public int RateLimitPerMinute { get; set; } = 0;
 }
 
-class ChatDb : DbContext
+public class ChatDb : DbContext
 {
     private readonly ChatSettings _chatSettings;
     public ChatDb(DbContextOptions options, IOptions<ChatSettings> chatSettings)

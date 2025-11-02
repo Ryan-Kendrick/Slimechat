@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Models.Slimechat;
 
@@ -9,11 +10,13 @@ public class ChatHub : Hub
 {
     private readonly ILogger<ChatHub> _logger;
     private readonly ChatSettings _chatSettings;
+    private readonly ChatDb db;
     private static readonly Dictionary<string, Queue<DateTime>> _rateLimits = new();
-    public ChatHub(ILogger<ChatHub> logger, IOptions<ChatSettings> chatSettings)
+    public ChatHub(ILogger<ChatHub> logger, IOptions<ChatSettings> chatSettings, ChatDb chatDb)
     {
         _logger = logger;
         _chatSettings = chatSettings.Value;
+        db = chatDb;
     }
 
     public override async Task OnConnectedAsync()
@@ -21,12 +24,11 @@ public class ChatHub : Hub
         _logger.LogInformation($@"
 Client connected
     Connection ID: {Context.ConnectionId}
-    User Identifier: {Context.UserIdentifier}
-    Remote IP: {Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString()}
+    Remote IP: {Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString() ?? "Unknown"}
         ");
 
-        // Send recent message history
-        // Invoke user connected task
+        var recentMessages = await db.Messages.ToListAsync();
+        await Clients.Caller.SendAsync("GetMessageHistory", recentMessages);
 
         await base.OnConnectedAsync();
     }
@@ -41,6 +43,11 @@ Client connected
         await base.OnDisconnectedAsync(exception);
     }
 
+    public async Task JoinChat(ChatUser user)
+    {
+        await Clients.AllExcept(Context.ConnectionId).SendAsync("UserJoined", user);
+    }
+
 
 
     public async Task BroadcastMessage(MessageData messageData)
@@ -49,7 +56,7 @@ Client connected
 
         if (rateLimited) throw new HubException("Rate limit exceeded");
 
-        var sanitised = new Message
+        var sanitisedMessage = new Message
         {
             Name = SanitiseName(messageData.Name),
             Color = SanitiseColor(messageData.Color),
@@ -61,18 +68,10 @@ Client connected
 
         try
         {
-            _logger.LogInformation(
-                "BroadcastMessage from {Name} at {UtcTime}: {Content}",
-                sanitised.Name,
-                DateTimeOffset.UtcNow,
-                sanitised.Content
-            );
-
-            await Clients.All.SendAsync(
-                "MessageReceived",
-                sanitised,
-                Context.ConnectionAborted
-            );
+            _logger.LogInformation($"BroadcastMessage from {sanitisedMessage.Name} at {DateTimeOffset.UtcNow}: {sanitisedMessage.Content}");
+            db.Messages.Add(sanitisedMessage);
+            await db.SaveChangesAsync();
+            await Clients.All.SendAsync("MessageReceived", sanitisedMessage, Context.ConnectionAborted);
         }
         catch (OperationCanceledException)
         {
