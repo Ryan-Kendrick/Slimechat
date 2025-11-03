@@ -42,10 +42,12 @@ Client connected
         if (exception != null) _logger.LogError(exception, "Client disconnected with error");
 
         var leavingUser = await db.ActiveConnections.FirstOrDefaultAsync(conn => conn.ConnectionId == Context.ConnectionId);
+        _logger.LogInformation($"User leaving: {leavingUser.Name}");
 
         if (leavingUser != null)
         {
             db.ActiveConnections.Remove(leavingUser);
+            await db.SaveChangesAsync();
 
             await Clients.AllExcept(Context.ConnectionId).SendAsync("UserLeft");
 
@@ -169,7 +171,6 @@ Client connected
 
         var queue = _rateLimits[ConnectionId];
         var now = DateTime.UtcNow;
-        Console.WriteLine($"Queue: {_rateLimits} This queue: {queue}, timenow: {now}");
 
         while (queue.Count > 0 && queue.Peek() < now.AddMinutes(-1)) queue.Dequeue();
 
