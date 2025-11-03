@@ -41,15 +41,47 @@ Client connected
 
         if (exception != null) _logger.LogError(exception, "Client disconnected with error");
 
+        var leavingUser = await db.ActiveConnections.FirstOrDefaultAsync(conn => conn.ConnectionId == Context.ConnectionId);
+        _logger.LogInformation($"User leaving: {leavingUser.Name}");
+
+        if (leavingUser != null)
+        {
+            db.ActiveConnections.Remove(leavingUser);
+            await db.SaveChangesAsync();
+
+            await Clients.AllExcept(Context.ConnectionId).SendAsync("UserLeft");
+
+            var connectionsNow = await db.ActiveConnections.ToListAsync();
+            var activeUsers = connectionsNow
+        .Select(u => new ChatUser { Name = u.Name, Color = u.Color })
+        .ToList();
+            await Clients.All.SendAsync("GetActiveUsers", activeUsers);
+        }
+        else
+        {
+            _logger.LogWarning($"Connection {Context.ConnectionId} not found in database on disconnect.");
+        }
+
         await base.OnDisconnectedAsync(exception);
     }
 
     public async Task JoinChat(ChatUser user)
     {
+        var connection = new ActiveConnection
+        {
+            ConnectionId = Context.ConnectionId,
+            Name = user.Name,
+            Color = user.Color
+        };
+
+        db.Add(connection);
+        await db.SaveChangesAsync();
         await Clients.AllExcept(Context.ConnectionId).SendAsync("UserJoined", user);
+
+        var connectionsNow = await db.ActiveConnections.ToListAsync();
+        var activeUsers = connectionsNow.Select(conn => new ChatUser { Name = conn.Name, Color = conn.Color }).ToList();
+        await Clients.Caller.SendAsync("GetActiveUsers", activeUsers);
     }
-
-
 
     public async Task BroadcastMessage(MessageData messageData)
     {
@@ -139,7 +171,6 @@ Client connected
 
         var queue = _rateLimits[ConnectionId];
         var now = DateTime.UtcNow;
-        Console.WriteLine($"Queue: {_rateLimits} This queue: {queue}, timenow: {now}");
 
         while (queue.Count > 0 && queue.Peek() < now.AddMinutes(-1)) queue.Dequeue();
 
