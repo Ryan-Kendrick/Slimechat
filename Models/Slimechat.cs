@@ -17,6 +17,7 @@ public class ActiveConnection : ChatUser
 
 public class MessageData
 {
+    public string UserId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public string Color { get; set; } = "#000";
@@ -59,6 +60,9 @@ public class ChatDb : DbContext
                 .IsRequired()
                 .HasMaxLength(_chatSettings.NameLengthMax + 13)
                 .ValueGeneratedNever();
+            entity.Property(e => e.UserId)
+            .HasMaxLength(_chatSettings.NameLengthMax + 13)
+            .ValueGeneratedNever();
             entity.Property(e => e.Content)
                 .IsRequired()
                 .HasMaxLength(_chatSettings.MessageLengthMax);
