@@ -77,12 +77,17 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<ChatDb>();
     try
     {
-        dbContext.Database.EnsureCreated();
-        app.Logger.LogInformation("Database initialized successfully");
+        if (app.Environment.IsDevelopment())
+        {
+            dbContext.Database.EnsureDeleted();
+        }
+
+        dbContext.Database.Migrate();
+        app.Logger.LogInformation("Database initialised successfully");
     }
     catch (Exception ex)
     {
-        app.Logger.LogError(ex, "Failed to initialize database");
+        app.Logger.LogError(ex, "Failed to initialize or migrate database.");
     }
 }
 
