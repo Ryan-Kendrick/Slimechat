@@ -53,3 +53,4 @@ Migrations/
 *.sqlite
 *.sqlite3
 *.db
+*.db-shm
