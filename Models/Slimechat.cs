@@ -6,6 +6,7 @@ namespace Models.Slimechat;
 
 public class ChatUser
 {
+    public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Color { get; set; } = string.Empty;
 }
@@ -75,13 +76,17 @@ public class ChatDb : DbContext
       {
           entity.HasKey(e => e.ConnectionId);
           entity.Property(e => e.ConnectionId)
-              .IsRequired();
+              .IsRequired()
+              .ValueGeneratedNever();
+          entity.Property(e => e.Id)
+              .IsRequired()
+              .ValueGeneratedNever();
           entity.Property(e => e.Name)
               .IsRequired()
               .HasMaxLength(_chatSettings.NameLengthMax);
           entity.Property(e => e.Color)
-                .IsRequired()
-                .HasMaxLength(7);
+              .IsRequired()
+              .HasMaxLength(7);
       });
     }
 }
