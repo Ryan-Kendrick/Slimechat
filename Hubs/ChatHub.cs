@@ -49,7 +49,7 @@ Client connected
             db.ActiveConnections.Remove(leavingUser);
             await db.SaveChangesAsync();
 
-            await Clients.AllExcept(Context.ConnectionId).SendAsync("UserLeft");
+            await Clients.AllExcept(Context.ConnectionId).SendAsync("UserLeft", leavingUser);
 
             var connectionsNow = await db.ActiveConnections.ToListAsync();
             var activeUsers = connectionsNow
