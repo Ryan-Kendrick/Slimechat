@@ -42,10 +42,10 @@ Client connected
         if (exception != null) _logger.LogError(exception, "Client disconnected with error");
 
         var leavingUser = await db.ActiveConnections.FirstOrDefaultAsync(conn => conn.ConnectionId == Context.ConnectionId);
-        _logger.LogInformation($"User leaving: {leavingUser.Name}");
 
         if (leavingUser != null)
         {
+            _logger.LogInformation($"Disconnected user: {leavingUser.Name}");
             db.ActiveConnections.Remove(leavingUser);
             await db.SaveChangesAsync();
 
