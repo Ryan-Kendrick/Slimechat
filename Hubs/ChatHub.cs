@@ -70,6 +70,7 @@ Client connected
         var connection = new ActiveConnection
         {
             ConnectionId = Context.ConnectionId,
+            Id = user.Id,
             Name = user.Name,
             Color = user.Color
         };
@@ -79,7 +80,7 @@ Client connected
         await Clients.AllExcept(Context.ConnectionId).SendAsync("UserJoined", user);
 
         var connectionsNow = await db.ActiveConnections.ToListAsync();
-        var activeUsers = connectionsNow.Select(conn => new ChatUser { Name = conn.Name, Color = conn.Color }).ToList();
+        var activeUsers = connectionsNow.Select(conn => new ChatUser { Id = conn.Id, Name = conn.Name, Color = conn.Color }).ToList();
         await Clients.Caller.SendAsync("GetActiveUsers", activeUsers);
     }
 
