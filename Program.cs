@@ -14,6 +14,7 @@ builder.Logging.AddSimpleConsole(options =>
     options.TimestampFormat = "HH:mm:ss dd-MM ";
 }); builder.Logging.SetMinimumLevel(LogLevel.Debug);
 
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(config =>
 {
@@ -61,6 +62,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
+app.MapControllers();
 app.UseCors();
 app.MapHub<ChatHub>("/chathub");
 
