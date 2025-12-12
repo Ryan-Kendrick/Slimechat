@@ -20,7 +20,7 @@ public class MessageData
     public string UserId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
-    public string Color { get; set; } = "#000";
+    public string? Color { get; set; } = "#000";
     public long UnixTime { get; set; } = 1763414400;
     public string Type { get; set; } = "user"; // system or user
 }
