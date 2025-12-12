@@ -21,7 +21,7 @@ public class ServerMessageController : ControllerBase
 
     [HttpPost("message")]
     public async Task<IActionResult> SendMessageAsServer([FromBody] ServerMessageRequest request)
-{
+    {
     if (string.IsNullOrEmpty(request.Key)) 
     {
         _logger.LogWarning("No API key received from {Client}", HttpContext.Connection.RemoteIpAddress);
@@ -40,12 +40,18 @@ public class ServerMessageController : ControllerBase
 
     _logger.LogInformation("Server broadcast: {Message}", request.Message);
 
-       await _hubContext.Clients.All.SendAsync("ServerMessage", new
+    var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+       await _hubContext.Clients.All.SendAsync("ServerMessage", new Message
         {
-            content = request.Message,
-            type = "system",
-            timestamp = DateTime.UnixEpoch
+            UserId = "System-32" + now,
+            Name = "🖥️ System",
+            Content = request.Message,
+            UnixTime = now,
+            Type = "system",
+
         });
 
-        return Ok(new { success = true, message = "Broadcast sent" });
+        return Ok();
+    }  
 }
