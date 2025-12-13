@@ -5,21 +5,24 @@ using Microsoft.Extensions.Options;
 using Models.Slimechat;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/ServerMessage")]
 public class ServerMessageController : ControllerBase
 {
     private readonly IHubContext<ChatHub> _hubContext;
-    private readonly ChatSettings _settings;
     private readonly ILogger<ServerMessageController> _logger;
+    private readonly ChatDb _db;
+    private readonly ChatSettings _settings;
+    
 
-    public ServerMessageController(IHubContext<ChatHub> hubContext, IOptions<ChatSettings> settings, ILogger<ServerMessageController> logger)
+    public ServerMessageController(IHubContext<ChatHub> hubContext, IOptions<ChatSettings> settings, ILogger<ServerMessageController> logger, ChatDb db)
     {
         _hubContext = hubContext;
-        _settings = settings.Value;
         _logger = logger;
+        _db = db;
+        _settings = settings.Value;
     }
 
-    [HttpPost("message")]
+    [HttpPost]
     public async Task<IActionResult> SendMessageAsServer([FromBody] ServerMessageRequest request)
     {
     if (string.IsNullOrEmpty(request.Key)) 
@@ -41,17 +44,35 @@ public class ServerMessageController : ControllerBase
     _logger.LogInformation("Server broadcast: {Message}", request.Message);
 
     var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-
-       await _hubContext.Clients.All.SendAsync("ServerMessage", new Message
+    var message = new Message
         {
+            Id = "System-32" + now,
             UserId = "System-32" + now,
             Name = "🖥️ System",
             Content = request.Message,
             UnixTime = now,
-            Type = "system",
+            Type = "user",
 
-        });
+        };
 
-        return Ok();
+    try {
+        _db.Add(message);
+        _db.SaveChanges();
+        await _hubContext.Clients.All.SendAsync("ServerMessage", message);
+        } 
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning(
+                "Server message failed to save or send; operation cancelled."
+            );
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Server message failed");
+            throw new HubException("Failed to save or send server message.");
+        }
+    
+    return Ok();
     }  
 }
