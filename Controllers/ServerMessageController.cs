@@ -1,3 +1,4 @@
+using Api;
 using Hubs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -6,20 +7,16 @@ using Models.Slimechat;
 
 [ApiController]
 [Route("api/ServerMessage")]
-public class ServerMessageController : ControllerBase
+public class ServerMessageController : ApiControllerBase
 {
     private readonly IHubContext<ChatHub> _hubContext;
     private readonly ILogger<ServerMessageController> _logger;
-    private readonly ChatDb _db;
-    private readonly ChatSettings _settings;
     
 
-    public ServerMessageController(IHubContext<ChatHub> hubContext, IOptions<ChatSettings> settings, ILogger<ServerMessageController> logger, ChatDb db)
+    public ServerMessageController(IHubContext<ChatHub> hubContext, IOptions<ChatSettings> Settings, ILogger<ServerMessageController> logger, ChatDb Db) : base(Db, Settings)
     {
         _hubContext = hubContext;
         _logger = logger;
-        _db = db;
-        _settings = settings.Value;
     }
 
     [HttpPost]
@@ -30,7 +27,7 @@ public class ServerMessageController : ControllerBase
         _logger.LogWarning("No API key received from {Client}", HttpContext.Connection.RemoteIpAddress);
         return Unauthorized("No key provided");
     }
-    if (request.Key != _settings.ApiKey) 
+    if (request.Key != Settings.ApiKey) 
     {
         _logger.LogWarning("Invalid API key received from {Client}", HttpContext.Connection.RemoteIpAddress);
         return Unauthorized("Invalid key");
@@ -56,8 +53,8 @@ public class ServerMessageController : ControllerBase
         };
 
     try {
-        _db.Add(message);
-        _db.SaveChanges();
+        Db.Add(message);
+        Db.SaveChanges();
         await _hubContext.Clients.All.SendAsync("ServerMessage", message);
         } 
         catch (OperationCanceledException)
@@ -74,5 +71,5 @@ public class ServerMessageController : ControllerBase
         }
     
     return Ok();
-    }  
+    }
 }
