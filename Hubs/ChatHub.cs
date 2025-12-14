@@ -27,7 +27,7 @@ Client connected
     Remote IP: {Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString() ?? "Unknown"}
         ");
 
-        var recentMessages = await db.Messages.OrderByDescending(m => m.UnixTime).Take(_chatSettings.MessageHistoryMax).Reverse().ToListAsync();
+        var recentMessages = await db.Messages.OrderByDescending(m => m.UnixTime).Take(_chatSettings.OnJoinMessageHistoryMax).Reverse().ToListAsync();
 
         await Clients.Caller.SendAsync("GetMessageHistory", recentMessages);
 
@@ -74,7 +74,7 @@ Client connected
             Color = user.Color
         };
 
-        db.Add(connection);
+        db.ActiveConnections.Add(connection);
         await db.SaveChangesAsync();
         await Clients.AllExcept(Context.ConnectionId).SendAsync("UserJoined", user);
 
