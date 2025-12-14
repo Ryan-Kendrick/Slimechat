@@ -11,40 +11,40 @@ public class ServerMessageController : ApiControllerBase
 {
     private readonly IHubContext<ChatHub> _hubContext;
     private readonly ILogger<ServerMessageController> _logger;
-    
 
-    public ServerMessageController(IHubContext<ChatHub> hubContext, IOptions<ChatSettings> Settings, ILogger<ServerMessageController> logger, ChatDb Db) : base(Db, Settings)
+
+    public ServerMessageController(IHubContext<ChatHub> hubContext, IOptions<ApiSettings> Settings, ILogger<ServerMessageController> logger, ChatDb Db) : base(Db, Settings)
     {
         _hubContext = hubContext;
         _logger = logger;
     }
 
     [HttpPost]
-    public async Task<IActionResult> SendMessageAsServer([FromBody] ServerMessageRequest request)
+    public async Task<ActionResult<Message>> SendMessageAsServer([FromBody] ServerMessageRequest request)
     {
-    if (string.IsNullOrEmpty(request.Key)) 
-    {
-        _logger.LogWarning("No API key received from {Client}", HttpContext.Connection.RemoteIpAddress);
-        return Unauthorized("No key provided");
-    }
-    if (request.Key != Settings.ApiKey) 
-    {
-        _logger.LogWarning("Invalid API key received from {Client}", HttpContext.Connection.RemoteIpAddress);
-        return Unauthorized("Invalid key");
-    }
+        if (string.IsNullOrEmpty(request.Key))
+        {
+            _logger.LogWarning("No API key received from {Client}", HttpContext.Connection.RemoteIpAddress);
+            return Unauthorized("No key provided");
+        }
+        if (request.Key != Settings.ApiKey)
+        {
+            _logger.LogWarning("Invalid API key received from {Client}", HttpContext.Connection.RemoteIpAddress);
+            return Unauthorized();
+        }
 
-    if (string.IsNullOrWhiteSpace(request.Message))
-    {
-        return BadRequest("Message required");
-    }
+        if (string.IsNullOrWhiteSpace(request.Message))
+        {
+            return BadRequest("Message required");
+        }
 
-    _logger.LogInformation("Server broadcast: {Message}", request.Message);
+        _logger.LogInformation("Server broadcast: {Message}", request.Message);
 
-    var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-    var message = new Message
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var message = new Message
         {
             Id = "System-32" + now,
-            UserId = "System-32" + now,
+            UserId = "System-32" + 1763414400,
             Name = "🖥️ System",
             Content = request.Message,
             UnixTime = now,
@@ -52,11 +52,12 @@ public class ServerMessageController : ApiControllerBase
 
         };
 
-    try {
-        Db.Add(message);
-        Db.SaveChanges();
-        await _hubContext.Clients.All.SendAsync("ServerMessage", message);
-        } 
+        try
+        {
+            Db.Messages.Add(message);
+            await Db.SaveChangesAsync();
+            await _hubContext.Clients.All.SendAsync("ServerMessage", message);
+        }
         catch (OperationCanceledException)
         {
             _logger.LogWarning(
@@ -69,7 +70,7 @@ public class ServerMessageController : ApiControllerBase
             _logger.LogError(ex, "Server message failed");
             throw new HubException("Failed to save or send server message.");
         }
-    
-    return Ok();
+
+        return Ok(message);
     }
 }
