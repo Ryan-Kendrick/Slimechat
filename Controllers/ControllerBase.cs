@@ -8,9 +8,10 @@ namespace Api;
 public abstract class ApiControllerBase : ControllerBase
 {
     protected ChatDb Db { get; }
-    protected ChatSettings Settings { get; }
+    protected ApiSettings Settings { get; }
 
-    protected ApiControllerBase(ChatDb db, IOptions<ChatSettings> settings) {
+    protected ApiControllerBase(ChatDb db, IOptions<ApiSettings> settings)
+    {
         Db = db;
         Settings = settings.Value;
     }
