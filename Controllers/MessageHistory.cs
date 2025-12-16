@@ -25,7 +25,48 @@ public class MessageHistoryController : ApiControllerBase
         return Ok(messages);
     }
 
-    // Add GET MessageHistory/user/{id}
-    // Add authenticated PUT MessageHistory/{id}
-    // Add authenticated DELETE MessageHistory/{id}
+    [HttpGet("{userId}")]
+    public async Task<ActionResult<List<Message>>> GetUserMessageHistory(string userId, [FromBody] MessageHistoryRequest? request)
+    {
+        var count = request?.Count ?? Settings.GetMessageHistoryMax;
+        count = Math.Clamp(count, 1, Settings.GetMessageHistoryMax);
+        var messages = await Db.Messages.Where(m => m.UserId == userId).AsNoTracking().OrderByDescending(m => m.UnixTime).Take(count).ToListAsync();
+
+        return Ok(messages);
+    }
+
+    [HttpPut("{messageId}")]
+    public async Task<ActionResult<Message>> PutMessage(string messageId, [FromBody] UpdateMessageContentRequest request)
+    {
+        if (request.Key != Settings.ApiKey) return Unauthorized();
+        if (request.NewContent == null) return BadRequest();
+
+        var message = await Db.Messages.FindAsync(messageId);
+        if (message == null) return NotFound("Message id {messageId} not found");
+
+        message.Content = request.NewContent;
+        await Db.SaveChangesAsync();
+
+        // Add force clients to get message history
+
+        return Ok(message);
+    }
+
+    [HttpDelete("{messageId}")]
+    public async Task<ActionResult<Message>> DeleteMessage(string messageId, [FromBody] DeleteMessageRequest request)
+    {
+        if (request.Key != Settings.ApiKey) return Unauthorized();
+
+        var message = await Db.Messages.FindAsync(messageId);
+        if (message == null) return NotFound("Message id {messageId} not found");
+
+        Db.Messages.Remove(message);
+        await Db.SaveChangesAsync();
+
+        // Add force clients to get message history
+
+        return NoContent();
+    }
+
+
 }
