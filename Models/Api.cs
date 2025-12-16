@@ -19,3 +19,14 @@ public class MessageHistoryRequest
     public int? Count { get; set; }
 
 }
+
+public class UpdateMessageContentRequest
+{
+    public string NewContent { get; set; } = string.Empty;
+    public string Key { get; set; } = string.Empty;
+}
+
+public class DeleteMessageRequest
+{
+    public string Key { get; set; } = string.Empty;
+}
