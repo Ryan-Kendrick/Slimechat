@@ -13,8 +13,6 @@ public class ServerMessageRequest
 {
     [Required]
     public string Message { get; init; } = string.Empty;
-    [Required]
-    public string Key { get; init; } = string.Empty;
 }
 
 public class MessageHistoryRequest

@@ -1,4 +1,5 @@
 using Api;
+using Api.Authentication;
 using Hubs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -7,6 +8,7 @@ using Models.Slimechat;
 
 [ApiController]
 [Route("api/ServerMessage")]
+[AuthenticationRequired]
 public class ServerMessageController : ApiControllerBase
 {
     private readonly IHubContext<ChatHub> _hubContext;
@@ -22,17 +24,6 @@ public class ServerMessageController : ApiControllerBase
     [HttpPost]
     public async Task<ActionResult<Message>> SendMessageAsServer([FromBody] ServerMessageRequest request)
     {
-        if (string.IsNullOrEmpty(request.Key))
-        {
-            _logger.LogWarning("No API key received from {Client}", HttpContext.Connection.RemoteIpAddress);
-            return Unauthorized("No key provided");
-        }
-        if (request.Key != Settings.ApiKey)
-        {
-            _logger.LogWarning("Invalid API key received from {Client}", HttpContext.Connection.RemoteIpAddress);
-            return Unauthorized();
-        }
-
         if (string.IsNullOrWhiteSpace(request.Message))
         {
             return BadRequest("Message required");
