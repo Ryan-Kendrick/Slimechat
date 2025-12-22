@@ -34,6 +34,7 @@ builder.Services.AddSignalR(o =>
 });
 builder.Services.Configure<ChatSettings>(builder.Configuration.GetSection("ChatSettings"));
 builder.Services.Configure<ApiSettings>(builder.Configuration.GetSection("ApiSettings"));
+builder.Services.AddProblemDetails();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(

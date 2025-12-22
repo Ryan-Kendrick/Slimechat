@@ -1,4 +1,5 @@
 using Api;
+using Api.Authentication;
 using Hubs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -41,9 +42,9 @@ public class MessageHistoryController : ApiControllerBase
     }
 
     [HttpPut("{messageId}")]
-    public async Task<ActionResult<Message>> PutMessage(string messageId, [FromBody] UpdateMessageContentRequest request, [FromHeader] string key)
+    [AuthenticationRequired]
+    public async Task<ActionResult<Message>> PutMessage(string messageId, [FromBody] UpdateMessageContentRequest request)
     {
-        if (key != Settings.ApiKey) return Unauthorized();
         if (request.NewContent == null) return BadRequest();
 
         var message = await Db.Messages.FindAsync(messageId);
@@ -61,11 +62,9 @@ public class MessageHistoryController : ApiControllerBase
     }
 
     [HttpDelete("{messageId}")]
-    public async Task<ActionResult<Message>> DeleteMessage(string messageId, [FromHeader] string key)
+    [AuthenticationRequired]
+    public async Task<ActionResult<Message>> DeleteMessage(string messageId)
     {
-        Console.WriteLine(key);
-        if (key != Settings.ApiKey) return Unauthorized();
-
         var message = await Db.Messages.FindAsync(messageId);
         if (message == null) return NotFound("Message id {messageId} not found");
 
