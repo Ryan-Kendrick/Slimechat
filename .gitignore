@@ -53,4 +53,5 @@ Migrations/
 *.sqlite
 *.sqlite3
 *.db
-*.db*
+
+secrets.json
