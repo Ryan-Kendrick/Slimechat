@@ -30,12 +30,20 @@ public class Message : MessageData
     public string Id { get; set; } = string.Empty;
 }
 
+public class ServerMessageRequest 
+{
+    public string Message { get; set; } = string.Empty;
+    public string Key { get; set; } = string.Empty;
+}
+
 public class ChatSettings
 {
     public int MessageLengthMax { get; set; } = 0;
     public int NameLengthMax { get; set; } = 0;
     public int MessageHistoryMax { get; set; } = 0;
     public int RateLimitPerMinute { get; set; } = 0;
+    public string? ApiKey { get; set; }
+
 }
 
 public class ChatDb : DbContext

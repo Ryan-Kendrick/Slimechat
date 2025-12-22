@@ -5,6 +5,8 @@ using Models.Slimechat;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddJsonFile("secrets.json", optional: true, reloadOnChange: true);
+
 string connectionString = builder.Configuration.GetConnectionString("Messages") ?? "Data Source=Messages.db";
 
 builder.Logging.ClearProviders();
@@ -62,9 +64,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
-app.MapControllers();
 app.UseCors();
 app.MapHub<ChatHub>("/chathub");
+app.MapControllers();
 
 TaskScheduler.UnobservedTaskException += (sender, err) =>
 {
