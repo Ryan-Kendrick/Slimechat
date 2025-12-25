@@ -54,8 +54,4 @@ Migrations/
 *.sqlite3
 *.db
 
-<<<<<<< HEAD
 secrets.json
-=======
-secrets.json
->>>>>>> 5d497961dd0de8a7a45f9f379bc65ce474e7f638
