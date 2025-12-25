@@ -10,7 +10,7 @@ using Models.Slimechat;
 
 [ApiController]
 [Route("api/MessageHistory")]
-public class MessageHistoryController(IHubContext<ChatHub> hubContext, ILogger<MessageHistoryController> logger, IOptions<ApiSettings> settings, ChatDb db) : ApiControllerBase(db, settings)
+public class MessageHistoryController(IHubContext<ChatHub> hubContext, IOptions<ApiSettings> settings, ILogger<MessageHistoryController> logger, ChatDb db) : ApiControllerBase(db, settings)
 {
     [HttpGet]
     public async Task<ActionResult<List<Message>>> GetMessageHistory([FromBody] MessageHistoryRequest? request, CancellationToken ct)

@@ -50,7 +50,10 @@ builder.Services.AddCors(options =>
 });
 
 string connectionString = builder.Configuration.GetConnectionString("Messages") ?? "Data Source=Messages.db";
-builder.Services.AddSqlite<ChatDb>(connectionString);
+builder.Services.AddDbContextFactory<ChatDb>(options => options.UseSqlite(connectionString));
+builder.Services.AddScoped(p =>
+    p.GetRequiredService<IDbContextFactory<ChatDb>>().CreateDbContext());
+builder.Services.AddHostedService<MessageCleanupService>();
 
 var app = builder.Build();
 
@@ -92,7 +95,9 @@ TaskScheduler.UnobservedTaskException += (sender, err) =>
 
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<ChatDb>();
+    var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ChatDb>>();
+    using var dbContext = factory.CreateDbContext();
+
     try
     {
         if (app.Environment.IsDevelopment())
@@ -108,5 +113,6 @@ using (var scope = app.Services.CreateScope())
         app.Logger.LogError(ex, "Failed to initialize or migrate database.");
     }
 }
+
 
 app.Run();
