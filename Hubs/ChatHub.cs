@@ -46,6 +46,7 @@ Client connected
             await Clients.AllExcept(Context.ConnectionId).SendAsync("UserLeft");
 
             var connectionsNow = await db.ActiveConnections.ToListAsync();
+            // Get a new list of current users; exclude the ConnectionId 
             var activeUsers = connectionsNow
         .Select(u => new ChatUser { Name = u.Name, Color = u.Color })
         .ToList();
