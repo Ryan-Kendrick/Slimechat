@@ -1,5 +1,6 @@
 using Api;
 using Api.Authentication;
+using Exceptions;
 using Hubs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -12,37 +13,36 @@ using Models.Slimechat;
 public class MessageHistoryController(IHubContext<ChatHub> hubContext, ILogger<MessageHistoryController> logger, IOptions<ApiSettings> settings, ChatDb db) : ApiControllerBase(db, settings)
 {
     [HttpGet]
-    public async Task<ActionResult<List<Message>>> GetMessageHistory([FromBody] MessageHistoryRequest? request)
+    public async Task<ActionResult<List<Message>>> GetMessageHistory([FromBody] MessageHistoryRequest? request, CancellationToken ct)
     {
         var count = request?.Count ?? Settings.GetMessageHistoryMax;
         count = Math.Clamp(count, 1, Settings.GetMessageHistoryMax);
 
-        var messages = await Db.Messages.AsNoTracking().OrderByDescending(m => m.UnixTime).Take(count).ToListAsync();
+        var messages = await Db.Messages.AsNoTracking().OrderByDescending(m => m.UnixTime).Take(count).ToListAsync(ct);
 
         return Ok(messages);
     }
 
     [HttpGet("{userId}")]
-    public async Task<ActionResult<List<Message>>> GetUserMessageHistory(string userId, [FromBody] MessageHistoryRequest? request)
+    public async Task<ActionResult<List<Message>>> GetUserMessageHistory(string userId, [FromBody] MessageHistoryRequest? request, CancellationToken ct)
     {
         var count = request?.Count ?? Settings.GetMessageHistoryMax;
         count = Math.Clamp(count, 1, Settings.GetMessageHistoryMax);
-        var messages = await Db.Messages.Where(m => m.UserId == userId).AsNoTracking().OrderByDescending(m => m.UnixTime).Take(count).ToListAsync();
+
+        var messages = await Db.Messages.AsNoTracking().Where(m => m.UserId == userId).OrderByDescending(m => m.UnixTime).Take(count).ToListAsync(ct);
 
         return Ok(messages);
     }
 
     [HttpPut("{messageId}")]
     [AuthenticationRequired]
-    public async Task<ActionResult<Message>> PutMessage(string messageId, [FromBody] UpdateMessageContentRequest request)
+    public async Task<ActionResult<Message>> PutMessage(string messageId, [FromBody] UpdateMessageContentRequest request, CancellationToken ct)
     {
-        if (request.NewContent == null) return BadRequest();
 
-        var message = await Db.Messages.FindAsync(messageId);
-        if (message == null) return NotFound("Message id {messageId} not found");
+        var message = await Db.Messages.FindAsync(messageId) ?? throw new ResourceNotFoundException($"Message id {messageId} not found");
 
         message.Content = request.NewContent;
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(ct);
 
 
         logger.LogInformation("Message by {User} updated: {Message}", message.Name, message.Content);
@@ -54,13 +54,12 @@ public class MessageHistoryController(IHubContext<ChatHub> hubContext, ILogger<M
 
     [HttpDelete("{messageId}")]
     [AuthenticationRequired]
-    public async Task<ActionResult<Message>> DeleteMessage(string messageId)
+    public async Task<ActionResult<Message>> DeleteMessage(string messageId, CancellationToken ct)
     {
-        var message = await Db.Messages.FindAsync(messageId);
-        if (message == null) return NotFound("Message id {messageId} not found");
+        var message = await Db.Messages.FindAsync([messageId], ct) ?? throw new ResourceNotFoundException($"Message id {messageId} not found");
 
         Db.Messages.Remove(message);
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(ct);
 
         logger.LogInformation("Message by {User} deleted: {Message}", message.Name, message.Content);
 
