@@ -9,10 +9,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddJsonFile("secrets.json", optional: true, reloadOnChange: true);
 
-<<<<<<< HEAD
-=======
-string connectionString = builder.Configuration.GetConnectionString("Messages") ?? "Data Source=Messages.db";
->>>>>>> 5d497961dd0de8a7a45f9f379bc65ce474e7f638
 
 builder.Logging.ClearProviders();
 builder.Logging.AddSimpleConsole(options =>
