@@ -6,18 +6,12 @@ using Models.Slimechat;
 
 namespace Hubs;
 
-public class ChatHub : Hub
+public class ChatHub(ILogger<ChatHub> logger, IOptions<ChatSettings> chatSettings, ChatDb chatDb) : Hub
 {
-    private readonly ILogger<ChatHub> _logger;
-    private readonly ChatSettings _chatSettings;
-    private readonly ChatDb db;
+    private readonly ILogger<ChatHub> _logger = logger;
+    private readonly ChatSettings _chatSettings = chatSettings.Value;
+    private readonly ChatDb db = chatDb;
     private static readonly Dictionary<string, Queue<DateTime>> _rateLimits = new();
-    public ChatHub(ILogger<ChatHub> logger, IOptions<ChatSettings> chatSettings, ChatDb chatDb)
-    {
-        _logger = logger;
-        _chatSettings = chatSettings.Value;
-        db = chatDb;
-    }
 
     public override async Task OnConnectedAsync()
     {
@@ -166,7 +160,7 @@ Client connected
 
     private bool CheckRateLimit(string ConnectionId)
     {
-        // Once unique names are being used this should be userId = user.name ?? ConnectionId
+        // If unique names are added this could use user.Name instead for a more robust approach
         if (!_rateLimits.ContainsKey(ConnectionId)) _rateLimits[ConnectionId] = new Queue<DateTime>();
 
         var queue = _rateLimits[ConnectionId];
@@ -178,8 +172,5 @@ Client connected
 
         queue.Enqueue(now);
         return true;
-
     }
-
-
 }

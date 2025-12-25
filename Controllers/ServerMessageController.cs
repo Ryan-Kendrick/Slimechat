@@ -9,17 +9,8 @@ using Models.Slimechat;
 [ApiController]
 [Route("api/ServerMessage")]
 [AuthenticationRequired]
-public class ServerMessageController : ApiControllerBase
+public class ServerMessageController(IHubContext<ChatHub> hubContext, IOptions<ApiSettings> settings, ILogger<ServerMessageController> logger, ChatDb db) : ApiControllerBase(db, settings)
 {
-    private readonly IHubContext<ChatHub> _hubContext;
-    private readonly ILogger<ServerMessageController> _logger;
-
-
-    public ServerMessageController(IHubContext<ChatHub> hubContext, IOptions<ApiSettings> Settings, ILogger<ServerMessageController> logger, ChatDb Db) : base(Db, Settings)
-    {
-        _hubContext = hubContext;
-        _logger = logger;
-    }
 
     [HttpPost]
     public async Task<ActionResult<Message>> SendMessageAsServer([FromBody] ServerMessageRequest request)
@@ -29,7 +20,7 @@ public class ServerMessageController : ApiControllerBase
             return BadRequest("Message required");
         }
 
-        _logger.LogInformation("Server broadcast: {Message}", request.Message);
+        logger.LogInformation("Server broadcast: {Message}", request.Message);
 
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var message = new Message
@@ -47,18 +38,18 @@ public class ServerMessageController : ApiControllerBase
         {
             Db.Messages.Add(message);
             await Db.SaveChangesAsync();
-            await _hubContext.Clients.All.SendAsync("ServerMessage", message);
+            await hubContext.Clients.All.SendAsync("ServerMessage", message);
         }
         catch (OperationCanceledException)
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "Server message failed to save or send; operation cancelled."
             );
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Server message failed");
+            logger.LogError(ex, "Server message failed");
             throw new HubException("Failed to save or send server message.");
         }
 

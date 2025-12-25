@@ -9,17 +9,8 @@ using Models.Slimechat;
 
 [ApiController]
 [Route("api/MessageHistory")]
-public class MessageHistoryController : ApiControllerBase
+public class MessageHistoryController(IHubContext<ChatHub> hubContext, ILogger<MessageHistoryController> logger, IOptions<ApiSettings> settings, ChatDb db) : ApiControllerBase(db, settings)
 {
-    private readonly IHubContext<ChatHub> _hubContext;
-    private readonly ILogger<MessageHistoryController> _logger;
-
-    public MessageHistoryController(IHubContext<ChatHub> hubContext, ILogger<MessageHistoryController> logger, IOptions<ApiSettings> Settings, ChatDb Db) : base(Db, Settings)
-    {
-        _logger = logger;
-        _hubContext = hubContext;
-    }
-
     [HttpGet]
     public async Task<ActionResult<List<Message>>> GetMessageHistory([FromBody] MessageHistoryRequest? request)
     {
@@ -54,9 +45,9 @@ public class MessageHistoryController : ApiControllerBase
         await Db.SaveChangesAsync();
 
 
-        _logger.LogInformation("Message by {User} updated: {Message}", message.Name, message.Content);
+        logger.LogInformation("Message by {User} updated: {Message}", message.Name, message.Content);
 
-        await _hubContext.Clients.All.SendAsync("UpdateModifiedMessage", message);
+        await hubContext.Clients.All.SendAsync("UpdateModifiedMessage", message);
 
         return Ok(message);
     }
@@ -71,12 +62,10 @@ public class MessageHistoryController : ApiControllerBase
         Db.Messages.Remove(message);
         await Db.SaveChangesAsync();
 
-        _logger.LogInformation("Message by {User} deleted: {Message}", message.Name, message.Content);
+        logger.LogInformation("Message by {User} deleted: {Message}", message.Name, message.Content);
 
-        await _hubContext.Clients.All.SendAsync("RemoveDeletedMessage", message);
+        await hubContext.Clients.All.SendAsync("RemoveDeletedMessage", message);
 
         return NoContent();
     }
-
-
 }

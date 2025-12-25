@@ -2,12 +2,12 @@ using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Hubs;
 using Models.Slimechat;
+using Api.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddJsonFile("secrets.json", optional: true, reloadOnChange: true);
 
-string connectionString = builder.Configuration.GetConnectionString("Messages") ?? "Data Source=Messages.db";
 
 builder.Logging.ClearProviders();
 builder.Logging.AddSimpleConsole(options =>
@@ -34,6 +34,7 @@ builder.Services.AddSignalR(o =>
 });
 builder.Services.Configure<ChatSettings>(builder.Configuration.GetSection("ChatSettings"));
 builder.Services.Configure<ApiSettings>(builder.Configuration.GetSection("ApiSettings"));
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 builder.Services.AddCors(options =>
 {
@@ -47,10 +48,12 @@ builder.Services.AddCors(options =>
         });
 });
 
+string connectionString = builder.Configuration.GetConnectionString("Messages") ?? "Data Source=Messages.db";
 builder.Services.AddSqlite<ChatDb>(connectionString);
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
 app.Use(async (context, next) =>
 {
     await next();
