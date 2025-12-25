@@ -15,12 +15,6 @@ public class ServerMessageController(IHubContext<ChatHub> hubContext, IOptions<A
     [HttpPost]
     public async Task<ActionResult<Message>> SendMessageAsServer([FromBody] ServerMessageRequest request)
     {
-        if (string.IsNullOrWhiteSpace(request.Message))
-        {
-            return BadRequest("Message required");
-        }
-
-        logger.LogInformation("Server broadcast: {Message}", request.Message);
 
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var message = new Message
@@ -34,24 +28,11 @@ public class ServerMessageController(IHubContext<ChatHub> hubContext, IOptions<A
 
         };
 
-        try
-        {
-            Db.Messages.Add(message);
-            await Db.SaveChangesAsync();
-            await hubContext.Clients.All.SendAsync("ServerMessage", message);
-        }
-        catch (OperationCanceledException)
-        {
-            logger.LogWarning(
-                "Server message failed to save or send; operation cancelled."
-            );
-            throw;
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Server message failed");
-            throw new HubException("Failed to save or send server message.");
-        }
+        Db.Messages.Add(message);
+        await Db.SaveChangesAsync();
+        await hubContext.Clients.All.SendAsync("ServerMessage", message);
+
+        logger.LogInformation("Server broadcast: {Message}", request.Message);
 
         return Ok(message);
     }

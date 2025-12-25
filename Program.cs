@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Hubs;
 using Models.Slimechat;
 using Api.Infrastructure;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,6 +73,14 @@ app.UseRouting();
 app.UseCors();
 app.MapHub<ChatHub>("/chathub");
 app.MapControllers();
+
+app.MapGet("/robots.txt", () =>
+{
+    var sb = new StringBuilder();
+    sb.AppendLine("User-agent: *");
+    sb.AppendLine("Disallow: /");
+    return Results.Text(sb.ToString(), "text/plain");
+});
 
 TaskScheduler.UnobservedTaskException += (sender, err) =>
 {
