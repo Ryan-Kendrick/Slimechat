@@ -31,6 +31,8 @@ public class MessageHistoryController(IHubContext<ChatHub> hubContext, IOptions<
 
         var messages = await Db.Messages.AsNoTracking().Where(m => m.UserId == userId).OrderByDescending(m => m.UnixTime).Take(count).ToListAsync(ct);
 
+        if (messages.Count() == 0) throw new ResourceNotFoundException($"No messages found for User ID: {userId}");
+
         return Ok(messages);
     }
 
@@ -39,7 +41,7 @@ public class MessageHistoryController(IHubContext<ChatHub> hubContext, IOptions<
     public async Task<ActionResult<Message>> PutMessage(string messageId, [FromBody] UpdateMessageContentRequest request, CancellationToken ct)
     {
 
-        var message = await Db.Messages.FindAsync(messageId) ?? throw new ResourceNotFoundException($"Message id {messageId} not found");
+        var message = await Db.Messages.FindAsync(messageId) ?? throw new ResourceNotFoundException($"Message ID {messageId} not found");
 
         message.Content = request.NewContent;
         await Db.SaveChangesAsync(ct);

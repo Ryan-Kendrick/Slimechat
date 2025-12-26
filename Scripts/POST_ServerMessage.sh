@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# POST /api/ServerMessage/
+
 : "${apikey:?\$apikey variable must be provided}"
 
 i=1
