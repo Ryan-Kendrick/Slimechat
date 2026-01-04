@@ -49,7 +49,7 @@ Client connected
             var connectionsNow = await db.ActiveConnections.ToListAsync();
             // Get a new list of current users; exclude the ConnectionId 
             var activeUsers = connectionsNow
-        .Select(u => new ChatUser { Name = u.Name, Color = u.Color })
+        .Select(u => new ChatUser { Name = u.Name, Id = u.Id, Color = u.Color })
         .ToList();
             await Clients.All.SendAsync("GetActiveUsers", activeUsers);
         }
@@ -88,12 +88,14 @@ Client connected
 
         var sanitisedMessage = new Message
         {
+            Id = $"{messageData.Name}." +
+                $"{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+            UserId = messageData.UserId,
             Name = SanitiseName(messageData.Name),
             Color = SanitiseColor(messageData.Color),
             Content = SanitiseContent(messageData.Content),
             UnixTime = messageData.UnixTime,
-            Id = $"{messageData.Name}." +
-                $"{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+            Type = "user"
         };
 
         try

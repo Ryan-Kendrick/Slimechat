@@ -6,9 +6,9 @@ namespace Models.Slimechat;
 
 public class ChatUser
 {
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string Color { get; set; } = string.Empty;
+    public required string Id { get; set; } = string.Empty;
+    public required string Name { get; set; } = string.Empty;
+    public required string Color { get; set; } = string.Empty;
 }
 public class ActiveConnection : ChatUser
 {
@@ -17,17 +17,17 @@ public class ActiveConnection : ChatUser
 
 public class MessageData
 {
-    public string UserId { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
+    public required string UserId { get; set; }
+    public required string Name { get; set; }
+    public required string Content { get; set; }
     public string? Color { get; set; } = "#000";
-    public long UnixTime { get; set; } = 1763414400;
-    public string Type { get; set; } = "user"; // system or user
+    public required long UnixTime { get; set; }
+    public required string Type { get; set; } = "user"; // system or user
 }
 
 public class Message : MessageData
 {
-    public string Id { get; set; } = string.Empty;
+    public required string Id { get; set; }
 }
 
 public class ChatSettings

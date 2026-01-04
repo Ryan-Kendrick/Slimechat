@@ -1,8 +1,10 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "slimechat", "slimechat.csproj", "{8E7668C1-CAA2-7C38-BB64-C954952D6F85}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api.Tests", "Api.Tests\Api.Tests.csproj", "{50B6B3E3-38AF-4578-A269-D2BA45636788}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,6 +16,10 @@ Global
 		{8E7668C1-CAA2-7C38-BB64-C954952D6F85}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8E7668C1-CAA2-7C38-BB64-C954952D6F85}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8E7668C1-CAA2-7C38-BB64-C954952D6F85}.Release|Any CPU.Build.0 = Release|Any CPU
+		{50B6B3E3-38AF-4578-A269-D2BA45636788}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50B6B3E3-38AF-4578-A269-D2BA45636788}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50B6B3E3-38AF-4578-A269-D2BA45636788}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50B6B3E3-38AF-4578-A269-D2BA45636788}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
