@@ -1,4 +1,5 @@
 ﻿
+using Api.Tests;
 using Hubs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -8,7 +9,7 @@ using Microsoft.Extensions.Options;
 using Models.Slimechat;
 using NSubstitute;
 
-namespace Api.Tests;
+
 
 public class MessageHistoryControllerTests : IDisposable
 {
@@ -61,8 +62,8 @@ public class MessageHistoryControllerTests : IDisposable
         var controller = GetController();
         var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds;
         _db.Messages.AddRange(
-        new Message { Id = $"Slime-001.${now}", UserId = $"Slime-001.${now}", Name = "Slime-001", Content = "Oldest", UnixTime = 10, Type = "user" },
-        new Message { Id = $"Slime-002.${now}", UserId = $"Slime-002.${now}", Name = "Slime-002", Content = "Newest", UnixTime = 100, Type = "user" }
+        new Message { Id = $"Slime-001.${now}", UserId = $"Slime-001.${now}", Name = "Slime-001", Content = "Oldest", UnixTime = 1, Type = "user" },
+        new Message { Id = $"Slime-002.${now}", UserId = $"Slime-002.${now}", Name = "Slime-002", Content = "Newest", UnixTime = 10, Type = "user" }
     );
         await _db.SaveChangesAsync();
 
@@ -77,6 +78,23 @@ public class MessageHistoryControllerTests : IDisposable
     public async Task PutMessage_UpdatesDbAndNotifiesHub()
     {
         var controller = GetController();
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds;
+        var messageId = $"Slime-967.${now}";
+        var originalMessage = new Message { Id = messageId, UserId = $"Slime-967.${now}", Name = "Slime-967", Content = "Original message", Type = "user", UnixTime = 1 };
+        _db.Messages.Add(originalMessage);
+        await _db.SaveChangesAsync();
+
+        var putRequest = new UpdateMessageContentRequest { NewContent = "Put message", };
+
+        await controller.PutMessage(messageId, putRequest, CancellationToken.None);
+
+        var updatedMessage = await _db.Messages.FindAsync(messageId);
+        Assert.Equal("Put message", putRequest.NewContent);
+
+        await _mockChatClient.ReceivedSendAsync<Message>(
+            "UpdateModifiedMessage",
+            m => m.Id == messageId && m.Content == putRequest.NewContent
+        );
 
     }
 }
