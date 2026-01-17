@@ -4,6 +4,7 @@ using Hubs;
 using Models.Slimechat;
 using Api.Infrastructure;
 using System.Text;
+using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +19,8 @@ builder.Logging.AddSimpleConsole(options =>
 {
     // options.IncludeScopes = true;
     options.TimestampFormat = "HH:mm:ss dd-MM ";
-}); builder.Logging.SetMinimumLevel(LogLevel.Debug);
+});
+
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

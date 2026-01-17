@@ -108,7 +108,7 @@ Client connected
         catch (OperationCanceledException)
         {
             _logger.LogWarning(
-                "Broadcast canceled (connection aborted or token canceled)"
+                "Broadcast cancelled (connection aborted or token cancelled)"
             );
             throw;
         }
