@@ -113,7 +113,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        app.Logger.LogError(ex, "Failed to initialize or migrate database.");
+        app.Logger.LogError(ex, "Failed to initialise or migrate database.");
     }
 }
 
