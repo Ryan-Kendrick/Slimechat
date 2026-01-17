@@ -16,7 +16,6 @@ public class MessageCleanupService(IOptions<ChatSettings> settings, ILogger<Mess
             try
             {
                 cleanupCount++;
-                Console.WriteLine(i);
                 await CleanupMessagesAsync(cleanupCount, lastVacuumTick, ct);
             }
             catch (Exception ex)
