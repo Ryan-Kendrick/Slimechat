@@ -7,13 +7,17 @@ public class MessageCleanupService(IOptions<ChatSettings> settings, ILogger<Mess
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
         int cleanupInterval = settings.Value.MessageCleanupServiceInterval;
+        int cleanupCount = 0;
+        int lastVacuumTick = 0;
         using var timer = new PeriodicTimer(TimeSpan.FromMinutes(cleanupInterval));
 
         while (await timer.WaitForNextTickAsync(ct))
         {
             try
             {
-                await CleanupMessagesAsync(ct);
+                cleanupCount++;
+                Console.WriteLine(i);
+                await CleanupMessagesAsync(cleanupCount, lastVacuumTick, ct);
             }
             catch (Exception ex)
             {
@@ -22,7 +26,7 @@ public class MessageCleanupService(IOptions<ChatSettings> settings, ILogger<Mess
         }
     }
 
-    private async Task CleanupMessagesAsync(CancellationToken ct)
+    private async Task CleanupMessagesAsync(int cleanupCount, int lastVacuumTick, CancellationToken ct)
     {
         using var db = await dbContextFactory.CreateDbContextAsync(ct);
 
@@ -42,7 +46,13 @@ public class MessageCleanupService(IOptions<ChatSettings> settings, ILogger<Mess
 
             if (deletedRows > 0)
             {
-                logger.LogInformation("Maintenance: Purged {Count} old messages.", deletedRows);
+                logger.LogInformation("Maintenance: Purged {Count} old messages. Running VACUUM to reclaim space.", deletedRows);
+            }
+
+            if (cleanupCount - lastVacuumTick > 4)
+            {
+                lastVacuumTick = cleanupCount;
+                await db.Database.ExecuteSqlRawAsync("VACUUM;", ct);
             }
         }
     }
