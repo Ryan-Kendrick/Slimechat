@@ -88,8 +88,8 @@ Client connected
 
     public async Task BroadcastMessage(MessageData messageData)
     {
-        bool rateLimited = !CheckRateLimit(Context.ConnectionId);
-        if (rateLimited) throw new HubException("Rate limit exceeded");
+        bool withinRateLimit = isNotRateLimited(Context.ConnectionId);
+        if (!withinRateLimit) throw new HubException("Rate limit exceeded");
 
         var sanitisedMessage = new Message
         {
@@ -169,7 +169,7 @@ Client connected
             ? ""
             : content[..Math.Min(_chatSettings.MessageLengthMax, content.Length)];
 
-    private bool CheckRateLimit(string ConnectionId)
+    private bool isNotRateLimited(string ConnectionId)
     {
         // If unique names are added this could use user.Name instead for a more robust approach
         if (!_rateLimits.ContainsKey(ConnectionId)) _rateLimits[ConnectionId] = new Queue<DateTime>();
