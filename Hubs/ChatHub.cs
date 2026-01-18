@@ -31,26 +31,30 @@ Client connected
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
         _logger.LogInformation($"Client disconnected: {Context.ConnectionId}");
+
         _rateLimits.Remove(Context.ConnectionId);
 
         if (exception != null) _logger.LogError(exception, "Client disconnected with error");
 
         var leavingUser = await db.ActiveConnections.FirstOrDefaultAsync(conn => conn.ConnectionId == Context.ConnectionId);
+
         _logger.LogInformation($"User leaving: {leavingUser?.Name ?? "Unknown"}");
 
         if (leavingUser != null)
         {
             _logger.LogInformation($"Disconnected user: {leavingUser.Name}");
+
             db.ActiveConnections.Remove(leavingUser);
             await db.SaveChangesAsync();
 
             await Clients.AllExcept(Context.ConnectionId).SendAsync("UserLeft", leavingUser);
 
             var connectionsNow = await db.ActiveConnections.ToListAsync();
-            // Get a new list of current users; exclude the ConnectionId 
+            // Get a new list of current users; exclude the ConnectionId
             var activeUsers = connectionsNow
-        .Select(u => new ChatUser { Name = u.Name, Id = u.Id, Color = u.Color })
-        .ToList();
+                .Select(u => new ChatUser { Name = u.Name, Id = u.Id, Color = u.Color })
+                .ToList();
+
             await Clients.All.SendAsync("GetActiveUsers", activeUsers);
         }
         else
@@ -73,17 +77,18 @@ Client connected
 
         db.ActiveConnections.Add(connection);
         await db.SaveChangesAsync();
+
         await Clients.AllExcept(Context.ConnectionId).SendAsync("UserJoined", user);
 
         var connectionsNow = await db.ActiveConnections.ToListAsync();
         var activeUsers = connectionsNow.Select(conn => new ChatUser { Id = conn.Id, Name = conn.Name, Color = conn.Color }).ToList();
+
         await Clients.Caller.SendAsync("GetActiveUsers", activeUsers);
     }
 
     public async Task BroadcastMessage(MessageData messageData)
     {
         bool rateLimited = !CheckRateLimit(Context.ConnectionId);
-
         if (rateLimited) throw new HubException("Rate limit exceeded");
 
         var sanitisedMessage = new Message
@@ -103,6 +108,7 @@ Client connected
             _logger.LogInformation($"BroadcastMessage from {sanitisedMessage.Name} at {DateTimeOffset.UtcNow}: {sanitisedMessage.Content}");
             db.Messages.Add(sanitisedMessage);
             await db.SaveChangesAsync();
+
             await Clients.All.SendAsync("MessageReceived", sanitisedMessage, Context.ConnectionAborted);
         }
         catch (OperationCanceledException)
