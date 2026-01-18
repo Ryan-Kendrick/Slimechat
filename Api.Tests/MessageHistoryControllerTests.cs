@@ -1,4 +1,5 @@
 ﻿
+using Api.Authentication;
 using Api.Tests;
 using Hubs;
 using Microsoft.AspNetCore.Mvc;
@@ -97,4 +98,18 @@ public class MessageHistoryControllerTests : IDisposable
         );
 
     }
+
+    [Fact]
+    public void PutMessage_RequiresAuthentication()
+    {
+        var method = typeof(MessageHistoryController).GetMethod("PutMessage");
+        Type type = typeof(AuthenticationRequiredAttribute);
+
+        var authenticationAttribute = method?.GetCustomAttributes(type, inherit: false);
+
+        Assert.NotNull(authenticationAttribute);
+    }
+
+
+
 }
