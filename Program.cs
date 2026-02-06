@@ -47,7 +47,7 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(
         builder =>
         {
-            builder.WithOrigins(["http://localhost:3000", "https://unstable.slimeascend.com", "https://slimeascend.com"])
+            builder.WithOrigins(["http://localhost:3000", "https://unstable.slimeascend.com", "https://slimeascend.com", "https://www.slimeascend.com"])
                 .AllowAnyHeader()
                 .WithMethods("GET", "POST")
                 .AllowCredentials();
