@@ -1,5 +1,6 @@
 using Api.Authentication;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Models.Slimechat;
@@ -27,23 +28,41 @@ public class SystemController(ChatDb db, IOptions<ApiSettings> settings, ILogger
         }
     }
 
-    [HttpPost("dropdb")]
+    [HttpPost("DropDb")]
     public IActionResult DeleteDb()
     {
+        // This is a terrible idea, but it is fun
         try
         {
             var dbPath = Db.Database.GetDbConnection().DataSource;
-            logger.LogWarning("Manual Database Deletion requested for path: {Path}", dbPath);
+            logger.LogWarning("Manual Database deletion requested for path: {Path}", dbPath);
 
             // Close connections before deleting
             Db.Database.GetDbConnection().Close();
+            SqliteConnection.ClearAllPools();
 
-            if (System.IO.File.Exists(dbPath))
+            var filesToDelete = new[]
+          {
+            dbPath,
+            dbPath + "-shm",
+            dbPath + "-wal",
+        };
+
+            var deleted = false;
+
+            foreach (var file in filesToDelete)
             {
-                System.IO.File.Delete(dbPath);
-                return Ok("Database deleted.");
+                if (System.IO.File.Exists(file))
+                {
+                    System.IO.File.Delete(file);
+                    deleted = true;
+                    logger.LogInformation("Deleted: {File}", file);
+                }
             }
-            return NotFound("Database file not found.");
+
+            return deleted
+                ? Ok("Database and journal files deleted.")
+                : NotFound("No database files found.");
         }
         catch (Exception ex)
         {
@@ -51,4 +70,25 @@ public class SystemController(ChatDb db, IOptions<ApiSettings> settings, ILogger
             return StatusCode(500, ex.Message);
         }
     }
+
+    [HttpPost("CreateDb")]
+    public IActionResult CreateDb()
+    {
+        try
+        {
+            var dbPath = Db.Database.GetDbConnection().DataSource;
+            logger.LogWarning("Manual Database creation requested for path: {Path}", dbPath);
+
+            Db.Database.Migrate();
+            Db.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;"); // https://github.com/dotnet/efcore/issues/36513#issuecomment-3167179043
+
+            return Ok("Database created");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error during database deletion");
+            return StatusCode(500, ex.Message);
+        }
+    }
+
 }
